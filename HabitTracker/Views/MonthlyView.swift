@@ -100,7 +100,7 @@ struct MonthlyView: View {
 
     private var monthGrid: some View {
         let calendar = Calendar.current
-        let firstWeekdayOffset = calendar.component(.weekday, from: daysInMonth.first ?? Date()) - 2
+        let firstWeekdayOffset = (calendar.component(.weekday, from: daysInMonth.first ?? Date()) + 5) % 7
         let paddedDays = Array(repeating: nil as Date?, count: max(0, firstWeekdayOffset)) + daysInMonth
 
         return LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 7), spacing: 10) {

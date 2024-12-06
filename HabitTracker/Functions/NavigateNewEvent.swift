@@ -57,7 +57,9 @@ extension DatabaseManager {
     // Exclude events that are marked in the deletion table
     private func excludeDeletedEvents(from events: [Event], for date: Date, db: Database) throws -> [Event] {
         let calendar = Calendar.current
-        let targetDate = calendar.startOfDay(for: date) // Normalize the date to the start of the day
+        let targetDateFull = calendar.startOfDay(for: date)
+        let targetDate = calendar.date(byAdding: .day, value: 1, to: targetDateFull)!
+// Normalize the date to the start of the day, add 1
         
         // Debugging: Print the database path and table contents
         // print("Database path: \(dbQueue.path ?? "In-memory database")")
@@ -145,6 +147,15 @@ extension DatabaseManager {
         let targetDate = calendar.startOfDay(for: date)
         
         for event in events {
+            let startDate = calendar.startOfDay(for: event.eventDate)
+            let differenceInDays = calendar.dateComponents([.day], from: startDate, to: targetDate).day ?? -1
+            
+            // Skip scheduling if the target date is earlier than the event's start date
+            if differenceInDays < 0 {
+                print("Skipping \(event.eventName) because the target date \(targetDate) is earlier than the event's start date \(startDate).")
+                continue
+            }
+            
             // Check if the event is in the deletion table for the input date
             let isDeleted = try Table("deletion")
                 .filter(Column("eventName") == event.eventName &&
@@ -185,4 +196,5 @@ extension DatabaseManager {
             print("Scheduled event: \(event.eventName) on \(targetDate) at hour \(event.eventHour).")
         }
     }
+
 }

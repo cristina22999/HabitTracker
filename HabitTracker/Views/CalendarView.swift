@@ -16,6 +16,7 @@ struct CalendarView: View {
     @State private var selectedEvent: Event?
     @State private var navigateToWeeklyView = false
     @State private var navigateToMonthlyView = false
+    @State private var clearTextField: Bool = false
 
     @StateObject private var databaseObserver: DatabaseObserver
     
@@ -143,7 +144,11 @@ struct CalendarView: View {
                             hour: hour,
                             isLastHour: hour == 23,
                             activeHour: $activeHour,
-                            onSaveEvent: { eventName in addEventNoDB(at: hour, minute: 0, eventName: eventName) }
+                            clearTextField: $clearTextField,
+                            onSaveEvent: { eventName in
+                                                    addEventNoDB(at: hour, minute: 0, eventName: eventName)
+                                                    clearTextField = true // Trigger clearing text fields
+                                                }
                         )
                     }
                     Spacer().frame(height: 10)

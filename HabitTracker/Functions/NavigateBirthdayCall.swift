@@ -46,7 +46,7 @@ extension DatabaseManager {
                     eventDate: today,
                     eventHour: 0,
                     eventMinute: 0,
-                    eventLength: 1440, // Full day (1440 minutes)
+                    eventLength: 30,
                     allDay: true,
                     categoryID: 1,
                     repeatFrequency: 0

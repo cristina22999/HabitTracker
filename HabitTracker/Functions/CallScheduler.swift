@@ -86,7 +86,7 @@ class CallScheduler {
         }
     }
 
-    private func addEvent(friendID: Int64, date: Date, name: String, allDay: Bool, categoryID: Int64, repeatFrequency: Int, db: Database) {
+    func addEvent(friendID: Int64, date: Date, name: String, allDay: Bool, categoryID: Int64, repeatFrequency: Int, db: Database) {
         do {
             try dbManager.addEvent(
                 eventName: name,

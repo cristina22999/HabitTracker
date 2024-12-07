@@ -75,12 +75,22 @@ struct CalendarView: View {
                             onSave: {
                                 databaseObserver.refreshEvents(for: currentDate) // Refresh events for the current date
                             },
-                            onDelete: {
-                                deleteEvent(event)
-                                selectedEvent = nil
+                            onDelete: { deleteFuture, eventToDelete in
+                                        if deleteFuture {
+                                            deleteAllFutureEvents(
+                                                eventName: eventToDelete.eventName,
+                                                date: eventToDelete.eventDate,
+                                                hour: eventToDelete.eventHour
+                                            )
+                                            selectedEvent = nil
+                                        } else {
+                                            deleteEvent(eventToDelete)
+                                            selectedEvent = nil
+                                        }
+                                        fetchAndDisplayEvents(for: currentDate)
+                                    }
+                                )
                             }
-                        )
-                    }
 
                     .gesture(
                         MagnificationGesture()
@@ -254,6 +264,18 @@ struct CalendarView: View {
         do {
             try DatabaseManager.shared.deleteEvent(eventID: event.id ?? 0, eventName: event.eventName, date: currentDate, hour: event.eventHour, deleteFuture: false)
             fetchAndDisplayEvents(for: currentDate)
+        } catch {
+            print("Error deleting event: \(error)")
+        }
+    }
+    
+    private func deleteAllFutureEvents(eventName: String, date: Date, hour: Int) {
+        do {
+            try DatabaseManager.shared.deleteAllFutureEvents(
+                eventName: eventName,
+                eventDate: date,
+                eventHour: hour
+            )
         } catch {
             print("Error deleting event: \(error)")
         }

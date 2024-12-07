@@ -13,11 +13,12 @@ struct AddFriendView: View {
     @State private var friendName: String = ""
     @State private var callFrequency: String = "Weekly"
     @State private var birthday: Date? = nil
+    @State private var isBirthdayUnknown: Bool = true
     @State private var customDays: String = ""
-    @State private var errorMessage: String? = nil // Error message state
-
+    @State private var errorMessage: String? = nil
+    
     let frequencies = ["Weekly", "Biweekly", "Monthly", "On Birthday", "Custom"]
-    let dbQueue: DatabaseQueue // Accept DatabaseQueue as a parameter
+    let dbQueue: DatabaseQueue
 
     var body: some View {
         NavigationView {
@@ -56,14 +57,30 @@ struct AddFriendView: View {
                         }
                     }
 
-                    HStack {
-                        Text("Birthday")
-                        Spacer()
-                        DatePicker("", selection: Binding(get: { birthday ?? Date() }, set: { birthday = $0 }), displayedComponents: .date)
-                            .labelsHidden()
-                    }
-                }
-            }
+                    HStack(alignment: .center) {
+                                            Text("Birthday")
+                                            Spacer()
+                                            if !isBirthdayUnknown {
+                                                Text("Unknown")
+                                                    .foregroundColor(.secondary)
+                                                    .onTapGesture {
+                                                        isBirthdayUnknown = true
+                                                    }
+                                            } else {
+                                                DatePicker("", selection: Binding(get: { birthday ?? Date() }, set: { birthday = $0 }), displayedComponents: .date)
+                                                    .labelsHidden()
+                                            }
+                                            // Add the "Unknown" toggle here
+                                            Toggle("Unknown", isOn: $isBirthdayUnknown)
+                                                .onChange(of: !isBirthdayUnknown) { newValue in
+                                                    if newValue {
+                                                        birthday = nil // Set birthday to nil when "Unknown" is selected
+                                                    }
+                                                }
+                                                .labelsHidden() // Hide label for a cleaner appearance
+                                        }
+                                    }
+                                }
             .navigationTitle("Add Friend")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -145,6 +162,4 @@ struct AddFriendView: View {
             print("Error saving friend: \(error)")
         }
     }
-
-
 }

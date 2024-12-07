@@ -324,22 +324,27 @@ class DatabaseManager {
 
 
     
-    func deleteAllFutureEvents(eventName: String, startDate: Date) throws {
+    func deleteAllFutureEvents(eventName: String, eventDate: Date, eventHour: Int) throws {
         try dbQueue.write { db in
-            // Fetch all events with the given name and dates after or equal to the start date
+            // Fetch all events with the given name, event hour, and dates after or equal to the start date
             let futureEvents = try Event
-                .filter(Column("eventName") == eventName && Column("eventDate") >= startDate)
+                .filter(Column("eventName") == eventName &&
+                        Column("eventDate") >= eventDate &&
+                        Column("eventHour") == eventHour)
                 .fetchAll(db)
             
+            // Delete all matching future events
             for event in futureEvents {
-                var updatedEvent = event
-
-                // Update the event in the database
-                try updatedEvent.update(db)
-                print("Marked event \(updatedEvent.eventName) on \(updatedEvent.eventDate) as deleted and future-deleted.")
+                try event.delete(db)
+                print("Deleted event \(event.eventName) on \(event.eventDate) at hour \(event.eventHour).")
+            }
+            
+            if futureEvents.isEmpty {
+                print("No future events found to delete for \(eventName) starting from \(eventDate) at hour \(eventHour).")
             }
         }
     }
+
 
     // MARK: - Event Categories
 

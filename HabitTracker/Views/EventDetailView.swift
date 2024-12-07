@@ -10,10 +10,12 @@ import SwiftUI
 struct EventDetailView: View {
     var event: Event
     var onSave: () -> Void // Callback when saving changes
-    var onDelete: () -> Void // Callback for delete action
+    var onDelete: (Bool, Event) -> Void // Callback for delete action
 
+    @State private var eventId: Int64?
     @State private var eventName: String
     @State private var eventDescription: String = ""
+    @State private var repeatFrequency: Int
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var selectedCategoryID: Int64?
@@ -22,16 +24,20 @@ struct EventDetailView: View {
     @State private var endTimeManuallyModified = false
     @State private var allDay: Bool
     @State private var showCreateCategory = false
+    @State private var showDeleteConfirmation = false
+    @State private var deleteAllFuture = false
 
     @Environment(\.dismiss) private var dismiss
     
     @StateObject private var categoriesObserver = CategoriesDatabaseObserver(dbQueue: DatabaseManager.shared.dbQueue)
 
-    init(event: Event, onSave: @escaping () -> Void, onDelete: @escaping () -> Void) {
+    init(event: Event, onSave: @escaping () -> Void, onDelete: @escaping (Bool, Event) -> Void) {
         self.event = event
         self.onSave = onSave
         self.onDelete = onDelete
+        _eventId = State(initialValue: event.id)
         _eventName = State(initialValue: event.eventName)
+        _repeatFrequency = State(initialValue: event.repeatFrequency)
         _startDate = State(initialValue: Calendar.current.date(
             bySettingHour: event.eventHour,
             minute: event.eventMinute,
@@ -117,6 +123,9 @@ struct EventDetailView: View {
                             Text($0).tag($0)
                         }
                     }
+                    .onChange(of: repeatOption) { newValue in
+                        repeatFrequency = EventDetailView.repeatFrequency(for: newValue)
+                    }
 
                     if repeatOption == "Custom" {
                         HStack {
@@ -127,11 +136,23 @@ struct EventDetailView: View {
                                 .multilineTextAlignment(.center)
                             Text("days")
                         }
+                        .onChange(of: customFrequency) { newValue in
+                            repeatFrequency = Int(newValue) ?? 0
+                        }
                     }
                 }
 
                 Section {
-                    Button(action: onDelete) {
+                    Button(action: {
+                        if repeatFrequency > 0 {
+                            // Show confirmation dialog for repeating events
+                            showDeleteConfirmation = true
+                        } else {
+                            // Directly delete non-repeating events
+                            onDelete(false, event)
+                            dismiss()
+                        }
+                    }) {
                         Text("Delete Event")
                             .foregroundColor(.white)
                             .padding()
@@ -139,7 +160,19 @@ struct EventDetailView: View {
                             .background(Color.red)
                             .cornerRadius(8)
                     }
+                    .confirmationDialog("Delete Event", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+                        Button("Delete Only This One", role: .destructive) {
+                            onDelete(false, event) // Delete only this one
+                            dismiss()
+                        }
+                        Button("Delete All Future Events", role: .destructive) {
+                            onDelete(true, event) // Delete all future events
+                            dismiss()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    }
                 }
+
             }
             .navigationTitle("Edit Event")
             .navigationBarTitleDisplayMode(.inline)

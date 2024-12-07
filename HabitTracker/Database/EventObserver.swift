@@ -33,10 +33,12 @@ class DatabaseObserver: ObservableObject {
                     }
                 },
                 receiveValue: { [weak self] _ in
-                    self?.fetchEvents(for: Date())
+                    guard let self = self else { return }
+                    self.fetchEvents(for: Date()) // Always refresh events for the current date
                 }
             )
     }
+
     
     private func setupCategoryObservation() {
         categoryObservationToken = DatabaseRegionObservation(tracking: Table("eventCategory"))
@@ -62,6 +64,18 @@ class DatabaseObserver: ObservableObject {
         do {
             let fetchedEvents = try dbQueue.read { db in
                 try Event
+                    .select(
+                                        Column("id"),
+                                        Column("eventName"),
+                                        Column("eventDate"),
+                                        Column("eventHour"),
+                                        Column("eventMinute"),
+                                        Column("eventLength"),
+                                        Column("allDay"),
+                                        Column("categoryID"),
+                                        Column("done"),
+                                        Column("repeatFrequency")
+                                    )
                     .filter(Column("eventDate") == date)
                     .order(Column("eventHour").asc, Column("eventMinute").asc)
                     .fetchAll(db)
@@ -73,6 +87,7 @@ class DatabaseObserver: ObservableObject {
             print("Error fetching events: \(error)")
         }
     }
+
     
     func fetchAllEvents() {
         do {

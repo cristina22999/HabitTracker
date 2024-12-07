@@ -24,15 +24,8 @@ class CallScheduler {
         for friend in friends {
             guard let id = friend.id else { continue }
 
-            // Handle birthday calls
-            if let birthday = friend.birthday {
-                let birthdayDate = Calendar.current.startOfDay(for: birthday)
-                addEvent(friendID: id, date: birthdayDate, name: "Call \(friend.name) on Birthday", allDay: true, categoryID: 1, repeatFrequency: 365, db: db)
-                friendSchedule[id, default: []].append(birthdayDate)
-
-                // If the friend only wants birthday calls
-                if friend.onBirthday { continue }
-            }
+            // Skip handling if the friend only wants birthday calls, handled separately
+                    if friend.onBirthday { continue }
 
             // Schedule based on frequency
             friendSchedule[id] = scheduleNextCalls(for: friend, from: today, db: db)

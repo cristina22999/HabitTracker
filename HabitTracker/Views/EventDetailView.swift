@@ -24,6 +24,7 @@ struct EventDetailView: View {
     @State private var showCreateCategory = false
 
     @Environment(\.dismiss) private var dismiss
+    
     @StateObject private var categoriesObserver = CategoriesDatabaseObserver(dbQueue: DatabaseManager.shared.dbQueue)
 
     init(event: Event, onSave: @escaping () -> Void, onDelete: @escaping () -> Void) {

@@ -190,9 +190,10 @@ struct CalendarView: View {
     private func fetchAndDisplayEvents(for date: Date) {
         do {
             try DatabaseManager.shared.dbQueue.write { db in
-                // Perform all database operations within this closure
+                // Perform all database operations within this closure to avoid "methods not reentrant" error
                 try DatabaseManager.shared.addRepeatingEventsIfNeeded(for: date, db: db)
                 try DatabaseManager.shared.addCallEventsIfNeeded(for: date, db: db)
+                try DatabaseManager.shared.addBirthdayCallIfNeeded(for: date, db: db)
                 events = try DatabaseManager.shared.fetchEvents(for: date, db: db)
             }
         } catch {

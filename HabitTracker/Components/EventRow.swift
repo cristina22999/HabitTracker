@@ -62,14 +62,20 @@ struct EventRow: View {
     }
     
     private func updateCategoryColor(for categoryID: Int64) {
-            do {
-                // Fetch the category color from the DatabaseManager
-                categoryColor = try DatabaseManager.shared.fetchCategoryColor(for: categoryID)
-            } catch {
-                print("Error fetching category color for categoryID \(categoryID): \(error)")
-                categoryColor = "#0000FF" // Fallback to default color
+        do {
+            // Fetch the category color using DatabaseManager
+            let fetchedColor = try DatabaseManager.shared.fetchCategoryColor(for: categoryID)
+            DispatchQueue.main.async {
+                self.categoryColor = fetchedColor // Update state with the fetched color
+            }
+        } catch {
+            print("Error fetching category color for categoryID \(categoryID): \(error)")
+            DispatchQueue.main.async {
+                self.categoryColor = "#0000FF" // Fallback to default color
             }
         }
+    }
+
 
     private func calculateNewTime(from translation: CGFloat) -> (Int, Int) {
         let hourChange = Int(translation / 60)

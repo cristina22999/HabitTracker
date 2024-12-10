@@ -147,7 +147,7 @@ struct EventDetailView: View {
                         if repeatFrequency > 0 {
                             // Show confirmation dialog for repeating events
                             showDeleteConfirmation = true
-                        } else {
+                        } else if repeatFrequency == 0  {
                             // Directly delete non-repeating events
                             onDelete(false, event)
                             dismiss()

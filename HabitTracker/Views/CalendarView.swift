@@ -74,6 +74,8 @@ struct CalendarView: View {
                             event: event,
                             onSave: {
                                 databaseObserver.refreshEvents(for: currentDate) // Refresh events for the current date
+                                fetchAndDisplayEvents(for: currentDate)
+                                selectedEvent = nil
                             },
                             onDelete: { deleteFuture, eventToDelete in
                                         if deleteFuture {
@@ -182,8 +184,10 @@ struct CalendarView: View {
             .padding(.horizontal)
             // Pie Chart for the day's events
                                 if !events.isEmpty {
+                                    
                                     Divider()
                                     Spacer().frame(height: 40)
+                                    
                                     PieChartView(events: events)
                                         .frame(height: 300)
                                     Spacer().frame(height: 20)

@@ -1,0 +1,29 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+lane :beta do
+  increment_build_number(xcodeproj: "HabitTracker.xcodeproj")
+  build_app(
+    project: "HabitTracker.xcodeproj",
+    scheme: "HabitTracker",
+    export_method: "app-store",
+    export_options: "./build/ExportOptions.plist", # Reference the file here
+    output_directory: "./build",
+    output_name: "HabitTracker.ipa"
+  )
+  upload_to_testflight(ipa: "./build/HabitTracker.ipa")
+end

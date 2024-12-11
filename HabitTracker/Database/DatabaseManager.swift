@@ -23,7 +23,7 @@ class DatabaseManager {
             
             dbQueue = try DatabaseQueue(path: dbURL.path)
 
-            try resetDatabase() // Drop and recreate all tables
+            // try resetDatabase() // Drop and recreate all tables
             try setupDatabase()
         } catch {
             fatalError("Database setup failed: \(error)")

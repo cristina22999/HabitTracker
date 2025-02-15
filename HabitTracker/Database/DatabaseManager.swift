@@ -7,26 +7,86 @@
 
 import GRDB
 import Foundation
+import WidgetKit
+import UIKit
 
 class DatabaseManager {
     static let shared = DatabaseManager()
     var dbQueue: DatabaseQueue
+        
+        // Define the migrator
+        private let migrator: DatabaseMigrator = {
+            var migrator = DatabaseMigrator()
+            
+            // Initial migration to create tables
+            migrator.registerMigration("v1") { db in
+                // Create Event table
+                try db.create(table: "event") { t in
+                    t.autoIncrementedPrimaryKey("id")
+                    t.column("eventName", .text).notNull()
+                    t.column("eventDate", .datetime).notNull()
+                    t.column("eventHour", .integer).notNull()
+                    t.column("eventMinute", .integer).notNull()
+                    t.column("eventLength", .integer).notNull()
+                    t.column("allDay", .boolean).notNull().defaults(to: false)
+                    t.column("categoryID", .integer).notNull().defaults(to: 2)
+                    t.column("done", .boolean).notNull().defaults(to: false)
+                    t.column("repeatFrequency", .integer).notNull().defaults(to: 0)
+                }
+                
+                // Create Category table
+                try db.create(table: "category") { t in
+                    t.autoIncrementedPrimaryKey("id")
+                    t.column("name", .text).notNull()
+                    t.column("color", .text).notNull()
+                }
+                
+                // Create Friend table
+                try db.create(table: "friend") { t in
+                    t.autoIncrementedPrimaryKey("id")
+                    t.column("name", .text).notNull()
+                    t.column("frequency", .integer).notNull()
+                    t.column("birthday", .datetime)
+                    t.column("onBirthday", .boolean).notNull().defaults(to: false)
+                }
+                
+                // Create Deletion table
+                try db.create(table: "deletion") { t in
+                    t.autoIncrementedPrimaryKey("id")
+                    t.column("eventID", .integer).notNull()
+                    t.column("eventName", .text).notNull()
+                    t.column("dateDeleted", .datetime).notNull()
+                    t.column("hourDeleted", .integer).notNull()
+                    t.column("deleteFuture", .boolean).notNull()
+                }
+            }
+            
+            return migrator
+        }()
 
     private init() {
         do {
-            let fileManager = FileManager.default
-            let folderURL = try fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-            let dbURL = folderURL.appendingPathComponent("HabitTracker.sqlite")
+            // Get shared container URL for widget access
+            let groupContainer = FileManager.default
+                .containerURL(forSecurityApplicationGroupIdentifier: "group.com.cristinaponcela.habit-tracker")!
+            
+            let dbPath = groupContainer.appendingPathComponent("HabitTracker.sqlite").path
             
             // Print the database path
-                       print("Database path: \(dbURL.path)")
+            print("Database path: \(dbPath)")
             
-            dbQueue = try DatabaseQueue(path: dbURL.path)
-
-            // try resetDatabase() // Drop and recreate all tables
+            // Create DatabaseQueue
+            dbQueue = try DatabaseQueue(path: dbPath)
+            
+            // Initialize database with migrator
+            try migrator.migrate(dbQueue)
+            
+            // Setup database tables
             try setupDatabase()
+
+            setupBackgroundObserver()
         } catch {
-            fatalError("Database setup failed: \(error)")
+            fatalError("Database initialization failed: \(error)")
         }
     }
     
@@ -52,9 +112,6 @@ class DatabaseManager {
             try db.execute(sql: "PRAGMA foreign_keys = ON;")
         }
     }
-
-
-
 
     // MARK: - Database Setup
     private func setupDatabase() throws {
@@ -143,6 +200,20 @@ class DatabaseManager {
             }
         }
     }
+
+    private func notifyWidget() {
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func setupBackgroundObserver() {
+    NotificationCenter.default.addObserver(
+        forName: UIApplication.willResignActiveNotification,
+        object: nil,
+        queue: .main
+    ) { [weak self] _ in
+        self?.notifyWidget()
+    }
+}
     
     func fetchCategoryColor(for categoryID: Int64) throws -> String {
         return try dbQueue.read { db in
@@ -231,6 +302,7 @@ class DatabaseManager {
 
         // Insert the new event into the database
         try event.insert(db)
+        notifyWidget()
     }
 
 
@@ -245,6 +317,8 @@ class DatabaseManager {
             .filter(Column("eventDate") >= startOfDay && Column("eventDate") < endOfDay)
             .order(Column("eventHour").asc, Column("eventMinute").asc)
             .fetchAll(db)
+        
+        notifyWidget()
     }
 
 
@@ -320,6 +394,7 @@ class DatabaseManager {
                 throw error // Re-throw the error to ensure proper handling upstream
             }
         }
+        notifyWidget()
     }
 
 
@@ -343,6 +418,7 @@ class DatabaseManager {
                 print("No future events found to delete for \(eventName) starting from \(eventDate) at hour \(eventHour).")
             }
         }
+        notifyWidget()
     }
 
 
@@ -379,9 +455,9 @@ class DatabaseManager {
                 )
             }
             print("Category color updated successfully!")
+            notifyWidget()
         } catch {
             print("Error updating category color: \(error)")
         }
-    }
-
+    }   
 }

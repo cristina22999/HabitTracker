@@ -48,7 +48,7 @@ struct WeeklyView: View {
         .gesture(
             MagnificationGesture()
                 .onEnded { value in
-                    if value < 0.8 { // Detect zoom-out
+                    if value < 0.98 { // Detect zoom-out, very sensitive
                         navigateToMonthView = true
                     }
                 }

@@ -100,7 +100,7 @@ struct CalendarView: View {
                                 magnificationScale = value
                             }
                             .onEnded { value in
-                                if value < 0.8 { // Detect zoom-out gesture
+                                if value < 0.98 { // Detect zoom-out gesture
                                     navigateToWeeklyView = true
                                 }
                                 magnificationScale = 1.0 // Reset scale
